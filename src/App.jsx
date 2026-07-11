@@ -9,6 +9,7 @@ import {
   coastlines,
   geocode,
   reverseGeocode,
+  reverseGeocodeDetail,
   interpolatePoint,
   nearestCachedCoastlines,
   prefetchPoints,
@@ -40,6 +41,18 @@ function useThrottled(value, ms) {
       }, remaining)
     }
     return () => clearTimeout(timer.current)
+  }, [value, ms])
+  return v
+}
+
+// Plain trailing debounce — fires only after the value has been still for `ms`.
+// Used to gate the province reverse-geocode so it never runs mid-scrub or
+// mid-playback (only once the timeline comes to rest).
+function useDebounced(value, ms) {
+  const [v, setV] = useState(value)
+  useEffect(() => {
+    const id = setTimeout(() => setV(value), ms)
+    return () => clearTimeout(id)
   }, [value, ms])
   return v
 }
@@ -212,6 +225,44 @@ export default function App() {
     [pinValid, rLat, rLon]
   )
 
+  // Add the state/province via Nominatim, but only once the timeline has settled
+  // (debounced) and playback is stopped — keeps request volume tiny and polite.
+  const settleKey =
+    pinValid && !playing && time > 5 && !(modernPlace && modernPlace.isOcean)
+      ? `${rLat},${rLon}`
+      : null
+  const debSettleKey = useDebounced(settleKey, 650)
+  const [modernDetail, setModernDetail] = useState(null)
+  useEffect(() => {
+    if (!debSettleKey) {
+      setModernDetail(null)
+      return
+    }
+    const [la, lo] = debSettleKey.split(',').map(Number)
+    let alive = true
+    reverseGeocodeDetail(la, lo).then((d) => {
+      if (alive) setModernDetail(d ? { ...d, key: debSettleKey } : null)
+    })
+    return () => {
+      alive = false
+    }
+  }, [debSettleKey])
+
+  // Final label for "on today's map". Prefer the settled state+country detail;
+  // otherwise fall back to the instant local country/ocean lookup (which keeps
+  // updating during playback so the drift-over-modern-places narrative holds).
+  let modernLabel = null
+  if (modernPlace) {
+    const detailMatches = modernDetail && modernDetail.key === `${rLat},${rLon}`
+    if (detailMatches && modernDetail.country) {
+      modernLabel = modernDetail.state
+        ? `${modernDetail.state}, ${modernDetail.country}`
+        : modernDetail.country
+    } else {
+      modernLabel = modernPlace.name
+    }
+  }
+
   return (
     <div className="app">
       <header className="topbar">
@@ -265,6 +316,7 @@ export default function App() {
             pin={displayPin}
             place={loc}
             modernPlace={modernPlace}
+            modernLabel={modernLabel}
             loading={loading}
             error={error}
           />

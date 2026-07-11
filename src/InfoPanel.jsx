@@ -13,7 +13,15 @@ const ACCRETION_CAVEAT =
   'drifted in separately, so a point a few kilometres away may show a completely ' +
   'different past — a single pin can’t capture a whole range.'
 
-export default function InfoPanel({ time, pin, place, modernPlace, loading, error }) {
+export default function InfoPanel({
+  time,
+  pin,
+  place,
+  modernPlace,
+  modernLabel,
+  loading,
+  error,
+}) {
   const [showExplainer, setShowExplainer] = useState(false)
   const conf = confidenceFor(time)
   const period = periodFor(time)
@@ -103,10 +111,10 @@ export default function InfoPanel({ time, pin, place, modernPlace, loading, erro
         <div className="info-today">
           <div className="info-today-head">On today’s map</div>
           <div className="info-today-body">
-            {time > 5 && pin && pin.valid && modernPlace ? (
+            {time > 5 && pin && pin.valid && modernLabel ? (
               <>
                 At {time} Ma, <strong>{shortName(place.name)}</strong> sat over what
-                is now <strong>{modernPlace.name}</strong>
+                is now <strong>{modernLabel}</strong>
                 {' '}({fmtLat(pin.lat)}, {fmtLon(pin.lon)}) — a drift of about{' '}
                 <strong>{Math.abs(place.lat - pin.lat).toFixed(0)}° of latitude</strong>{' '}
                 {place.lat >= pin.lat ? 'north' : 'south'}

@@ -247,3 +247,40 @@ export async function reverseGeocode(lat, lon) {
     return null
   }
 }
+
+// Structured reverse geocode → { state, country } for a present-day point, used
+// to add "which state/province" to the on-today's-map perspective. Returns null
+// over ocean (Nominatim can't geocode open water). Cached by coordinate; the
+// caller only fires this on a settled timeline (debounced) to respect Nominatim
+// rate limits. Different countries expose the first admin level under different
+// keys, so we probe several.
+const detailCache = new Map()
+export async function reverseGeocodeDetail(lat, lon) {
+  const key = `${lat},${lon}`
+  if (detailCache.has(key)) return detailCache.get(key)
+  const url =
+    `${NOMINATIM}/reverse?format=jsonv2&lat=${lat}&lon=${lon}` +
+    `&zoom=8&addressdetails=1`
+  let result = null
+  try {
+    const res = await fetch(url, { headers: { Accept: 'application/json' } })
+    if (res.ok) {
+      const data = await res.json()
+      const a = data && !data.error ? data.address : null
+      if (a && a.country) {
+        const state =
+          a.state ||
+          a.province ||
+          a.region ||
+          a.state_district ||
+          a.county ||
+          null
+        result = { state: state || null, country: a.country }
+      }
+    }
+  } catch {
+    /* network hiccup → treat as no detail */
+  }
+  detailCache.set(key, result)
+  return result
+}

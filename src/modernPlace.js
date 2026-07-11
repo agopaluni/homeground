@@ -66,7 +66,9 @@ function oceanBasin(lat, lon) {
   if (lat >= 66) return 'the Arctic Ocean'
   if (lat <= -60) return 'the Southern Ocean'
   const L = ((lon + 540) % 360) - 180 // normalise to [-180, 180)
-  if (L > -70 && L < 20) return 'the Atlantic Ocean'
-  if (L >= 20 && L < 147 && lat < 30) return 'the Indian Ocean'
+  // Atlantic: the wedge between the Americas and Europe/Africa.
+  if (L > -83 && L < 25) return 'the Atlantic Ocean'
+  // Indian: east of Africa to around Australia.
+  if (L >= 25 && L < 147 && lat < 32) return 'the Indian Ocean'
   return 'the Pacific Ocean'
 }
