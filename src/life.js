@@ -68,6 +68,8 @@ const BY_ORDER = {
   Perissodactyla: ['Hoofed mammal', 'land', 1.8],
   Artiodactyla: ['Hoofed mammal', 'land', 1.8],
   Ichthyornithiformes: ['Seabird', 'sea', 1.8],
+  Ichthyornithes: ['Seabird', 'sea', 1.8],
+  Hesperornithes: ['Seabird', 'sea', 1.8],
   Hesperornithiformes: ['Seabird', 'sea', 1.8],
   Nektaspidida: ['Arthropod', 'sea', 1.3],
   Bradoriida: ['Arthropod', 'sea', 1],
