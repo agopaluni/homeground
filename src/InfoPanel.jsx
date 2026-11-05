@@ -19,6 +19,8 @@ export default function InfoPanel({
   place,
   modernPlace,
   modernLabel,
+  life,
+  playing,
   loading,
   error,
 }) {
@@ -136,11 +138,93 @@ export default function InfoPanel({
         </div>
       )}
 
+      {place && time >= 1 && <LifeSection life={life} playing={playing} time={time} />}
+
       {!pin && !loading && (
         <div className="info-empty">
           Search for a place or click the globe to drop a pin, then scrub the
           timeline to watch it drift.
         </div>
+      )}
+    </div>
+  )
+}
+
+// "Life here then" — fossil-record species for this spot and age, each linked
+// to its Wikipedia article.
+function LifeSection({ life, playing, time }) {
+  const status = life?.status || 'idle'
+  const data = life?.data
+
+  return (
+    <div className="life">
+      <div className="life-head">Life here then</div>
+
+      {status === 'idle' && playing && (
+        <div className="life-note">Pause to see what lived here.</div>
+      )}
+      {status === 'loading' && (
+        <div className="life-note">Digging through the fossil record…</div>
+      )}
+      {status === 'error' && (
+        <div className="life-note">
+          Couldn’t reach the fossil database right now. Try again in a moment.
+        </div>
+      )}
+
+      {status === 'ready' && data && (
+        <>
+          {data.source === 'fossils' ? (
+            <div className="life-note">
+              Fossils found within ~{data.radiusKm} km of this spot in rocks{' '}
+              {Math.round(data.window.min)}–{Math.round(data.window.max)} million years
+              old.
+              {data.habitat && <> {data.habitat}</>}
+            </div>
+          ) : (
+            <div className="life-note">
+              No fossils of this age are catalogued near here, so these are
+              examples of life typical of the time.
+            </div>
+          )}
+
+          <ul className="life-list">
+            {data.items.map((it) => (
+              <li key={it.name} className="life-item">
+                {it.thumb ? (
+                  <img className="life-thumb" src={it.thumb} alt="" loading="lazy" />
+                ) : (
+                  <div className="life-thumb life-thumb-empty" aria-hidden="true" />
+                )}
+                <div className="life-text">
+                  <a href={it.url} target="_blank" rel="noreferrer" className="life-name">
+                    {it.name}
+                  </a>
+                  <span className="life-label">
+                    {it.label}
+                    {it.finds ? ` · ${it.finds} ${it.finds === 1 ? 'find' : 'finds'}` : ''}
+                  </span>
+                  {it.description && <span className="life-desc">{it.description}</span>}
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="life-source">
+            {data.source === 'fossils' ? (
+              <>
+                From the{' '}
+                <a href="https://paleobiodb.org/" target="_blank" rel="noreferrer">
+                  Paleobiology Database
+                </a>
+                . The fossil record is patchy — it favours hard shells, bones and
+                quiet water, so absence doesn’t mean nothing lived here.
+              </>
+            ) : (
+              <>Illustrative picks for {time} Ma, not records from this exact spot.</>
+            )}
+          </div>
+        </>
       )}
     </div>
   )

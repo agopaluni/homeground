@@ -17,6 +17,7 @@ import {
 } from './gplates.js'
 import { confidenceFor } from './geology.js'
 import { placeAt } from './modernPlace.js'
+import { lifeAt } from './life.js'
 
 // Throttle a rapidly-changing value: emit at most once per `ms`, but always
 // with a trailing update so the final resting value is never missed. Unlike a
@@ -248,6 +249,35 @@ export default function App() {
     }
   }, [debSettleKey])
 
+  // "Life here then": fossils from the Paleobiology Database near the pin's
+  // present-day spot, for the settled age. Debounced and skipped during playback
+  // (PBDB queries take a second or two, and we don't want to hammer it).
+  const lifeKey =
+    loc && !playing && time >= 1
+      ? `${loc.lat}|${loc.lon}|${Math.round(time)}|${pinValid ? 1 : 0}`
+      : null
+  const debLifeKey = useDebounced(lifeKey, 700)
+  const [life, setLife] = useState({ status: 'idle', key: null, data: null })
+  useEffect(() => {
+    if (!debLifeKey) return
+    const [la, lo, t, land] = debLifeKey.split('|')
+    let alive = true
+    setLife({ status: 'loading', key: debLifeKey, data: null })
+    lifeAt(Number(la), Number(lo), Number(t), land === '1')
+      .then((data) => alive && setLife({ status: 'ready', key: debLifeKey, data }))
+      .catch(() => alive && setLife({ status: 'error', key: debLifeKey, data: null }))
+    return () => {
+      alive = false
+    }
+  }, [debLifeKey])
+  // Only show results that belong to the age currently on screen.
+  const lifeView =
+    lifeKey && life.key === lifeKey
+      ? life
+      : lifeKey
+      ? { status: playing ? 'idle' : 'loading', data: null }
+      : { status: 'idle', data: null }
+
   // Final label for "on today's map". Prefer the settled state+country detail;
   // otherwise fall back to the instant local country/ocean lookup (which keeps
   // updating during playback so the drift-over-modern-places narrative holds).
@@ -317,6 +347,8 @@ export default function App() {
             place={loc}
             modernPlace={modernPlace}
             modernLabel={modernLabel}
+            life={lifeView}
+            playing={playing}
             loading={loading}
             error={error}
           />

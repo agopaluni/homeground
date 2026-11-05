@@ -77,6 +77,13 @@ export default function Globe({ coastlines, pin, onPick, confidenceKey }) {
       rotRef.current = easeRot(rotRef.current, targetRef.current, 0.12)
 
       const scale = Math.min(w, h) / 2 - 8
+      // The container can be 0×0 before layout (e.g. the page loaded in a hidden
+      // tab). A negative radius makes createRadialGradient throw and would take
+      // the whole app down, so skip drawing until there's room for a globe.
+      if (!(scale > 4)) {
+        raf = requestAnimationFrame(draw)
+        return
+      }
       const projection = geoOrthographic()
         .scale(scale)
         .translate([w / 2, h / 2])

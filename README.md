@@ -39,6 +39,15 @@ Endpoints used:
 | Reconstruct a pin's position | `/reconstruct/reconstruct_points/?lons=&lats=&time=&model=&fc` |
 | Morph the map background | `/reconstruct/coastlines_low/?time=&model=` |
 
+**Life here then** uses the **[Paleobiology Database](https://paleobiodb.org/)** (PBDB)
+`occs/taxa` API: genera from fossils found near the pin's *present-day* coordinates in
+rocks of the selected age (the rock moved with the plate, so its fossils lived at that
+spot then). The search widens from ~250 km to ~1,200 km if the local record is thin.
+Genera are grouped into plain-language categories (dinosaur, ammonite, fern…), one is
+picked per category, and each links to its Wikipedia article (looked up in a single
+batched request to the Wikipedia API). With no local fossils, a short curated list of
+life typical of that period is shown instead, clearly labelled as illustrative.
+
 Reconstruction models (selectable in the UI):
 
 - **MERDITH2021** — default; deep‑time coverage back to ~1 Ga.
